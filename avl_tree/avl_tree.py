@@ -191,22 +191,110 @@ class AVLTree:
         else:
             raise ValueError('Unknown traversal type')  # Raise an error for invalid traversal type
 
-    def merge(self, tree: 'AVLTree') -> None:
+    def merge(self, other: 'AVLTree') -> None:
         '''Merges another AVL tree into this AVL tree.
         
-        Args:
-            tree (AVLTree): The AVL tree to be merged with this tree.
+        If the conditions are met such that:
+        - all keys in T1 are less than keys in T2
+        - T1.height <= T2.height,
         
-        This method is not yet implemented.
+        then the merging will be done in O(log n) time complexity using the algorithm.
+        Otherwise, the default merging algorithm will be used.
+        
+        T2 = self
+        T1 = other
+        
+               T1             T2
+
+                a              d
+               / \            / \
+              L   R          Q   K
+                   \        / \
+                    b      c   Y
+                          / \
+                         M   N
+
+
+                T2 (aka self) after merging:
+
+                    d
+                   / \
+                  Q   K
+                 / \
+                b   Y
+               / \
+              a   c
+             / \ / \
+            L  R M  N
+        
+        Args:
+            other (AVLTree): The AVL tree to be merged with this tree.
         '''
-        pass # admin dopishet zavtra, potomuchto hochet kyshat
+        
+        # Check conditions to use the default merge algorithm
+        if self.is_empty() or other.is_empty() or self.min() <= other.max() or self.height < other.height:
+            self.__default_merge(other)
+            return
+
+        # Get the maximum node from the other tree
+        b = other.__max(other.__root)
+        
+        # Remove the maximum node from the other tree
+        other.__root = other.__remove_max(other.__root)
     
-    def split(self) -> None:
+        # Pointer to the root of the current tree
+        p = self.__root
+        
+        # List to store nodes that need to be balanced
+        to_balance = [p]
+
+        # Traverse down the left children of the current tree while the height of the node is greater
+        # than the height of the other tree
+        while p.left and self.__height(p) > other.height:
+            p = p.left
+            to_balance.append(p)
+
+        # Set the left subtree for node b (the maximum node from the other tree)
+        b.left = other.__root
+
+        # Set the right subtree for node b
+        b.right = p.left
+
+        # Attach node b as the left child of node p
+        p.left = b
+
+        # Balance the nodes starting from the lowest node in the list
+        while len(to_balance) > 0:
+            # Balance the current node
+            to_balance[-1] = self.__balance(to_balance[-1])
+            to_balance.pop()  # Remove the node from the list after balancing
+
+    @__validate_natural_number
+    def split(self, val: int) -> 'AVLTree':
         '''Splits the AVL tree into two trees based on a specified value.
         
-        This method is not yet implemented.
+        This method creates two trees: 
+        - The current tree will contain all elements less than or equal to `val`.
+        - A new tree will contain all elements greater than `val`.
+        
+        Args:
+            val (int): The value to split the tree on.
+        
+        Returns:
+            AVLTree: A new AVL tree containing elements greater than `val`.
         '''
-        pass # admin dopishet zavtra, potomuchto hochet kyshat
+        
+        traversal_list = self.traverse()  # Get a list of all elements in the current tree in sorted order
+        self.clear()
+        rettree = AVLTree()  # Create a new AVL tree for elements greater than `val`
+        
+        for i in traversal_list:
+            if i <= val:
+                self.add(i)
+            else:
+                rettree.add(i)
+        
+        return rettree  # Return the new tree containing elements greater than `val`
     
     def check_validity(self) -> bool:
         '''Checks the validity of the AVL tree to ensure it maintains the AVL properties.
@@ -252,6 +340,7 @@ class AVLTree:
             Node: The node with the minimum value.
         '''
         return x if x.left is None else self.__min(x.left)
+    
 
     def __max(self, x: Node) -> Node:
         '''Finds the node with the maximum value in the subtree rooted at x.
@@ -303,7 +392,7 @@ class AVLTree:
         if x is None:
             return retlist
         return self.__postorder_traversal(x.left, retlist) + self.__postorder_traversal(x.right, retlist) + [x.val]
-
+    
     def __contains(self, x: Node, val: int) -> bool:
         '''Checks if a value is present in the subtree rooted at x.
         
@@ -479,13 +568,33 @@ class AVLTree:
         x.left = self.__remove_min(x.left)  # Recursively remove the minimum node
         return self.__balance(x)  # Balance the subtree after removal
 
-    def __min_node(self, x: Node) -> Node:
-        '''Finds the node with the minimum value in the subtree rooted at x.
+    def __remove_max(self, x: Node) -> Node:
+        '''Removes the node with the maximum value from the subtree rooted at x.
         
         Args:
             x (Node): The root node of the subtree.
         
         Returns:
-            Node: The node with the minimum value.
+            Node: The new root of the subtree after removing the maximum node.
         '''
-        return x if x.left is None else self.__min_node(x.left)  # Traverse left until the minimum node is found
+        if x.right is None:
+            return x.left  # If there is no right child, return the left child
+        x.right = self.__remove_max(x.right)  # Recursively remove the maximum node
+        return self.__balance(x)  # Balance the subtree after removal
+    
+    def __default_merge(self, other: 'AVLTree') -> None:
+        '''
+        Merges the current AVL tree with another AVL tree (other).
+        
+        This method retrieves all elements from the 'other' AVL tree 
+        and adds them to the current AVL tree (self) while maintaining 
+        the properties of the AVL tree.
+        
+        Parameters:
+        other (AVLTree): The AVL tree to be merged with the current tree.
+        '''
+        
+        traversal_list = other.traverse()
+        
+        for i in traversal_list:
+            self.add(i)
