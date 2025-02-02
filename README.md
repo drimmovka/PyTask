@@ -1,4 +1,4 @@
-# README for AssociativeArray Package
+# associative_array Package
 
 ## Overview
 
