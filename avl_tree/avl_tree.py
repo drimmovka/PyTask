@@ -235,6 +235,8 @@ class AVLTree:
         if self.is_empty() or other.is_empty() or self.min() <= other.max() or self.height < other.height:
             self.__default_merge(other)
             return
+                
+        # Other algorithm O(log n) (CHECK CORRECTNESS!!!):
 
         # Get the maximum node from the other tree
         b = other.__max(other.__root)
@@ -594,7 +596,7 @@ class AVLTree:
         other (AVLTree): The AVL tree to be merged with the current tree.
         '''
         
-        traversal_list = other.traverse()
+        traversal_list = other.traverse() # Get a list of elements from the 'other' AVL tree using the traverse() method.
         
         for i in traversal_list:
             self.add(i)
